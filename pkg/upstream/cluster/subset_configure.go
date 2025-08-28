@@ -73,7 +73,7 @@ func LoadSubsetKeyThresholdConfig() SubsetKeyThresholdConfig {
 // SubsetKeyThresholdListener is an interface that defines a listener for monitoring subset key thresholds.
 type SubsetKeyThresholdListener interface {
 	// Notify is called when the key's count exceeds the threshold.
-	Notify(key string, count int, threshold int)
+	Notify(clusterName string, key string, count int, threshold int)
 }
 
 var subsetKeyThresholdListenerManager = &SubsetKeyThresholdListenerManager{}
@@ -99,13 +99,13 @@ func (sm *SubsetKeyThresholdListenerManager) RegisterSubsetKeyThresholdListener(
 	sm.listeners.Store(listeners)
 }
 
-func (sm *SubsetKeyThresholdListenerManager) Notify(key string, count int, threshold int) {
+func (sm *SubsetKeyThresholdListenerManager) Notify(clusterName string, key string, count int, threshold int) {
 	value := sm.listeners.Load()
 	if value == nil {
 		return
 	}
 	listeners := value.([]SubsetKeyThresholdListener)
 	for _, listener := range listeners {
-		listener.Notify(key, count, threshold)
+		listener.Notify(clusterName, key, count, threshold)
 	}
 }

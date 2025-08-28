@@ -57,21 +57,21 @@ func TestSubsetKeyThresholdListenerManager(t *testing.T) {
 	assert := assert.New(t)
 
 	// Expect no panic
-	LoadSubsetKeyThresholdListenerManager().Notify("key", 10, 5)
+	LoadSubsetKeyThresholdListenerManager().Notify("clusterA", "key", 10, 5)
 
 	listener := NewMockSubsetKeyThresholdListener()
 	LoadSubsetKeyThresholdListenerManager().RegisterSubsetKeyThresholdListener(listener)
 
-	LoadSubsetKeyThresholdListenerManager().Notify("key1", 10, 5)
-	LoadSubsetKeyThresholdListenerManager().Notify("key2", 11, 6)
-	LoadSubsetKeyThresholdListenerManager().Notify("key3", 12, 7)
+	LoadSubsetKeyThresholdListenerManager().Notify("clusterA", "key1", 10, 5)
+	LoadSubsetKeyThresholdListenerManager().Notify("clusterB", "key2", 11, 6)
+	LoadSubsetKeyThresholdListenerManager().Notify("clusterC", "key3", 12, 7)
 
 	events := listener.GetEvents()
 	assert.NotNil(events)
 	assert.Equal(3, len(events))
-	assert.True(MockEvent{Key: "key1", Count: 10, Threshold: 5}.Equal(events[0]))
-	assert.True(MockEvent{Key: "key2", Count: 11, Threshold: 6}.Equal(events[1]))
-	assert.True(MockEvent{Key: "key3", Count: 12, Threshold: 7}.Equal(events[2]))
+	assert.True(MockEvent{ClusterName: "clusterA", Key: "key1", Count: 10, Threshold: 5}.Equal(events[0]))
+	assert.True(MockEvent{ClusterName: "clusterB", Key: "key2", Count: 11, Threshold: 6}.Equal(events[1]))
+	assert.True(MockEvent{ClusterName: "clusterC", Key: "key3", Count: 12, Threshold: 7}.Equal(events[2]))
 }
 
 type MockSubsetKeyThresholdListener struct {
@@ -84,8 +84,8 @@ func NewMockSubsetKeyThresholdListener() *MockSubsetKeyThresholdListener {
 	}
 }
 
-func (m *MockSubsetKeyThresholdListener) Notify(key string, count int, threshold int) {
-	m.events = append(m.events, MockEvent{key, count, threshold})
+func (m *MockSubsetKeyThresholdListener) Notify(clusterName string, key string, count int, threshold int) {
+	m.events = append(m.events, MockEvent{clusterName, key, count, threshold})
 }
 
 func (m *MockSubsetKeyThresholdListener) GetEvents() []MockEvent {
@@ -93,12 +93,17 @@ func (m *MockSubsetKeyThresholdListener) GetEvents() []MockEvent {
 }
 
 type MockEvent struct {
-	Key       string
-	Count     int
-	Threshold int
+	ClusterName string
+	Key         string
+	Count       int
+	Threshold   int
 }
 
 func (m MockEvent) Equal(o MockEvent) bool {
+	if m.ClusterName != o.ClusterName {
+		return false
+	}
+
 	if m.Key != o.Key {
 		return false
 	}
